@@ -8,14 +8,14 @@ import (
 	"github.com/infrago/util"
 )
 
-func (this *Module) Register(name string, value Any) {
-	switch config := value.(type) {
+func (this *Module) Register(obj infra.Object) {
+	switch config := obj.Object.(type) {
 	case Driver:
-		this.Driver(name, config)
+		this.Driver(obj.Name, config)
 	case Config:
-		this.Config(name, config)
+		this.Config(obj.Name, config)
 	case Configs:
-		this.Configs(name, config)
+		this.Configs(obj.Name, config)
 	}
 }
 
