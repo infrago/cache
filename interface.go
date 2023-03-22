@@ -135,8 +135,12 @@ func (this *Module) Connect() {
 			panic("Invalid cache driver: " + config.Driver)
 		}
 
+		inst := &Instance{
+			nil, name, config, config.Setting,
+		}
+
 		// 建立连接
-		connect, err := driver.Connect(name, config)
+		connect, err := driver.Connect(inst)
 		if err != nil {
 			panic("Failed to connect to cache: " + err.Error())
 		}
@@ -147,10 +151,10 @@ func (this *Module) Connect() {
 			panic("Failed to open cache connect: " + err.Error())
 		}
 
-		//保存连接
-		this.instances[name] = Instance{
-			name, config, connect,
-		}
+		inst.connect = connect
+
+		//保存实例
+		this.instances[name] = inst
 
 		//只有设置了权重的才参与分布
 		if config.Weight > 0 {

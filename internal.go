@@ -11,7 +11,7 @@ func (this *Module) Exists(key string) (bool, error) {
 	locate := this.hashring.Locate(key)
 
 	if inst, ok := this.instances[locate]; ok {
-		key := inst.config.Prefix + key //加前缀
+		key := inst.Config.Prefix + key //加前缀
 		return inst.connect.Exists(key)
 	}
 
@@ -23,14 +23,14 @@ func (this *Module) Read(key string) (Map, error) {
 
 	if inst, ok := this.instances[locate]; ok {
 		//加前缀
-		realkey := inst.config.Prefix + key
+		realkey := inst.Config.Prefix + key
 		data, err := inst.connect.Read(realkey)
 		if err != nil {
 			return nil, err
 		}
 
 		val := Map{}
-		err = infra.Unmarshal(inst.config.Codec, data, &val)
+		err = infra.Unmarshal(inst.Config.Codec, data, &val)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,7 @@ func (this *Module) ReadData(key string) ([]byte, error) {
 	locate := this.hashring.Locate(key)
 
 	if inst, ok := this.instances[locate]; ok {
-		realkey := inst.config.Prefix + key
+		realkey := inst.Config.Prefix + key
 		return inst.connect.Read(realkey)
 	}
 
@@ -59,19 +59,19 @@ func (this *Module) Write(key string, val Map, expiries ...time.Duration) error 
 	locate := this.hashring.Locate(key)
 
 	if inst, ok := this.instances[locate]; ok {
-		expiry := inst.config.Expiry
+		expiry := inst.Config.Expiry
 		if len(expiries) > 0 {
 			expiry = expiries[0]
 		}
 
 		// 编码数据
-		data, err := infra.Marshal(inst.config.Codec, &val)
+		data, err := infra.Marshal(inst.Config.Codec, &val)
 		if err != nil {
 			return err
 		}
 
 		//KEY加上前缀
-		realkey := inst.config.Prefix + key
+		realkey := inst.Config.Prefix + key
 		return inst.connect.Write(realkey, data, expiry)
 	}
 
@@ -82,13 +82,13 @@ func (this *Module) WriteData(key string, data []byte, expiries ...time.Duration
 	locate := this.hashring.Locate(key)
 
 	if inst, ok := this.instances[locate]; ok {
-		expiry := inst.config.Expiry
+		expiry := inst.Config.Expiry
 		if len(expiries) > 0 {
 			expiry = expiries[0]
 		}
 
 		//KEY加上前缀
-		realkey := inst.config.Prefix + key
+		realkey := inst.Config.Prefix + key
 		return inst.connect.Write(realkey, data, expiry)
 	}
 
@@ -100,7 +100,7 @@ func (this *Module) Delete(key string) error {
 	locate := this.hashring.Locate(key)
 
 	if inst, ok := this.instances[locate]; ok {
-		key := inst.config.Prefix + key
+		key := inst.Config.Prefix + key
 		return inst.connect.Delete(key)
 	}
 
@@ -117,7 +117,7 @@ func (this *Module) Serial(key string, start, step int64, expiries ...time.Durat
 			expiry = expiries[0]
 		}
 
-		key := inst.config.Prefix + key
+		key := inst.Config.Prefix + key
 		return inst.connect.Serial(key, start, step, expiry)
 	}
 
@@ -129,7 +129,7 @@ func (this *Module) Keys(prefix string) ([]string, error) {
 	keys := make([]string, 0)
 
 	for _, inst := range this.instances {
-		realPrefix := inst.config.Prefix + prefix
+		realPrefix := inst.Config.Prefix + prefix
 		temps, err := inst.connect.Keys(realPrefix)
 		if err == nil {
 			keys = append(keys, temps...)
@@ -142,7 +142,7 @@ func (this *Module) Keys(prefix string) ([]string, error) {
 // Clear 按前缀清理缓存
 func (this *Module) Clear(prefix string) error {
 	for _, inst := range this.instances {
-		realPrefix := inst.config.Prefix + prefix
+		realPrefix := inst.Config.Prefix + prefix
 		inst.connect.Clear(realPrefix)
 	}
 
