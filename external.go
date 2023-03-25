@@ -27,9 +27,18 @@ func Exists(key string) (bool, error) {
 func Serial(key string, start, step int64, expiries ...time.Duration) (int64, error) {
 	return module.Serial(key, start, step, expiries...)
 }
-func Keys(prefix string) ([]string, error) {
+func Keys(prefixs ...string) ([]string, error) {
+	prefix := ""
+	if len(prefixs) > 0 {
+		prefix = prefixs[0]
+	}
 	return module.Keys(prefix)
 }
 func Clear(prefix string) error {
+	prefix := ""
+	if len(prefixs) > 0 {
+		prefix = prefixs[0]
+	}
+
 	return module.Clear(prefix)
 }
