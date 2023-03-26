@@ -24,8 +24,8 @@ func Delete(key string) error {
 func Exists(key string) (bool, error) {
 	return module.Exists(key)
 }
-func Serial(key string, start, step int64, expiries ...time.Duration) (int64, error) {
-	return module.Serial(key, start, step, expiries...)
+func Sequence(key string, start, step int64, expiries ...time.Duration) (int64, error) {
+	return module.Sequence(key, start, step, expiries...)
 }
 func Keys(prefixs ...string) ([]string, error) {
 	prefix := ""
@@ -34,7 +34,7 @@ func Keys(prefixs ...string) ([]string, error) {
 	}
 	return module.Keys(prefix)
 }
-func Clear(prefix string) error {
+func Clear(prefixs ...string) error {
 	prefix := ""
 	if len(prefixs) > 0 {
 		prefix = prefixs[0]

@@ -107,8 +107,8 @@ func (this *Module) Delete(key string) error {
 	return errInvalidCacheConnection
 }
 
-// Serial 生成序列编号
-func (this *Module) Serial(key string, start, step int64, expiries ...time.Duration) (int64, error) {
+// Sequence 生成序列编号
+func (this *Module) Sequence(key string, start, step int64, expiries ...time.Duration) (int64, error) {
 	locate := this.hashring.Locate(key)
 
 	if inst, ok := this.instances[locate]; ok {
@@ -118,7 +118,7 @@ func (this *Module) Serial(key string, start, step int64, expiries ...time.Durat
 		}
 
 		key := inst.Config.Prefix + key
-		return inst.connect.Serial(key, start, step, expiry)
+		return inst.connect.Sequence(key, start, step, expiry)
 	}
 
 	return -1, errInvalidCacheConnection

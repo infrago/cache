@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	. "github.com/infrago/base"
@@ -172,6 +174,8 @@ func (this *Module) Launch() {
 	if this.launched {
 		return
 	}
+
+	log.Println(fmt.Sprintf("%s CACHE is running with %d connects.", infra.INFRAGO, len(this.instances)))
 
 	this.launched = true
 }

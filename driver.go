@@ -19,7 +19,7 @@ type (
 		Write(key string, val []byte, expiry time.Duration) error
 		Exists(key string) (bool, error)
 		Delete(key string) error
-		Serial(key string, start, step int64, expiry time.Duration) (int64, error)
+		Sequence(key string, start, step int64, expiry time.Duration) (int64, error)
 		Keys(prefix string) ([]string, error)
 		Clear(prefix string) error
 	}
