@@ -150,8 +150,8 @@ func (this *Module) Delete(key string) error {
 	return this.DeleteFrom("", key)
 }
 
-// SequenceTo 指定库生成编号
-func (this *Module) SequenceTo(conn, key string, start, step int64, expiries ...time.Duration) (int64, error) {
+// SequenceOn 指定库生成编号
+func (this *Module) SequenceOn(conn, key string, start, step int64, expiries ...time.Duration) (int64, error) {
 	inst, err := this.getInst(conn, key)
 	if err != nil {
 		return -1, err
@@ -168,7 +168,7 @@ func (this *Module) SequenceTo(conn, key string, start, step int64, expiries ...
 
 // Sequence 生成编号
 func (this *Module) Sequence(key string, start, step int64, expiries ...time.Duration) (int64, error) {
-	return this.SequenceTo("", key, start, step, expiries...)
+	return this.SequenceOn("", key, start, step, expiries...)
 }
 
 // Keys 获取所有前缀的KEYS

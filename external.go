@@ -71,9 +71,9 @@ func Sequence(key string, start, step int64, expiries ...time.Duration) (int64, 
 	return module.Sequence(key, start, step, expiries...)
 }
 
-// SequenceTo 指定库生成序列
-func SequenceTo(conn, key string, start, step int64, expiries ...time.Duration) (int64, error) {
-	return module.SequenceTo(conn, key, start, step, expiries...)
+// SequenceOn 指定库生成序列
+func SequenceOn(conn, key string, start, step int64, expiries ...time.Duration) (int64, error) {
+	return module.SequenceOn(conn, key, start, step, expiries...)
 }
 
 // KeysFrom 获取Keys
