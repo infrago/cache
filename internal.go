@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"strings"
 	"time"
 
 	. "github.com/infrago/base"
@@ -186,7 +187,9 @@ func (this *Module) KeysFrom(conn string, prefixs ...string) ([]string, error) {
 			realPrefix := inst.Config.Prefix + prefix
 			temps, err := inst.connect.Keys(realPrefix)
 			if err == nil {
-				keys = append(keys, temps...)
+				for _, temp := range temps {
+					keys = append(keys, strings.TrimPrefix(temp, realPrefix))
+				}
 			}
 		}
 		return keys, nil
@@ -197,7 +200,9 @@ func (this *Module) KeysFrom(conn string, prefixs ...string) ([]string, error) {
 		realPrefix := inst.Config.Prefix + prefix
 		temps, err := inst.connect.Keys(realPrefix)
 		if err == nil {
-			keys = append(keys, temps...)
+			for _, temp := range temps {
+				keys = append(keys, strings.TrimPrefix(temp, realPrefix))
+			}
 		}
 	}
 
