@@ -27,23 +27,23 @@ func ReadDataFrom(conn, key string) ([]byte, error) {
 }
 
 // Write 写缓存
-func Write(key string, value Map, expiries ...time.Duration) error {
-	return module.Write(key, value, expiries...)
+func Write(key string, value Map, expires ...time.Duration) error {
+	return module.Write(key, value, expires...)
 }
 
 // WriteTo 指定库写缓存
-func WriteTo(conn, key string, value Map, expiries ...time.Duration) error {
-	return module.WriteTo(conn, key, value, expiries...)
+func WriteTo(conn, key string, value Map, expires ...time.Duration) error {
+	return module.WriteTo(conn, key, value, expires...)
 }
 
 // WriteData 写缓存原始数据
-func WriteData(key string, data []byte, expiries ...time.Duration) error {
-	return module.WriteData(key, data, expiries...)
+func WriteData(key string, data []byte, expires ...time.Duration) error {
+	return module.WriteData(key, data, expires...)
 }
 
 // WriteDataTo 指定库写缓存原始数据
-func WriteDataTo(conn, key string, data []byte, expiries ...time.Duration) error {
-	return module.WriteDataTo(conn, key, data, expiries...)
+func WriteDataTo(conn, key string, data []byte, expires ...time.Duration) error {
+	return module.WriteDataTo(conn, key, data, expires...)
 }
 
 // Delete 删除缓存
@@ -67,13 +67,13 @@ func ExistsIn(conn, key string) (bool, error) {
 }
 
 // Sequence 生成序列
-func Sequence(key string, start, step int64, expiries ...time.Duration) (int64, error) {
-	return module.Sequence(key, start, step, expiries...)
+func Sequence(key string, start, step int64, expires ...time.Duration) (int64, error) {
+	return module.Sequence(key, start, step, expires...)
 }
 
 // SequenceOn 指定库生成序列
-func SequenceOn(conn, key string, start, step int64, expiries ...time.Duration) (int64, error) {
-	return module.SequenceOn(conn, key, start, step, expiries...)
+func SequenceOn(conn, key string, start, step int64, expires ...time.Duration) (int64, error) {
+	return module.SequenceOn(conn, key, start, step, expires...)
 }
 
 // KeysFrom 获取Keys

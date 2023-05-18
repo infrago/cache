@@ -42,7 +42,7 @@ type (
 		Weight  int
 		Prefix  string
 		Codec   string
-		Expiry  time.Duration
+		Expire  time.Duration
 		Setting Map
 	}
 	Instance struct {

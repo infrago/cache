@@ -86,16 +86,16 @@ func (this *Module) ReadData(key string) ([]byte, error) {
 }
 
 // Write 写缓存
-func (this *Module) WriteTo(conn string, key string, val Map, expiries ...time.Duration) error {
+func (this *Module) WriteTo(conn string, key string, val Map, expires ...time.Duration) error {
 	inst, err := this.getInst(conn, key)
 	if err != nil {
 		return err
 	}
 
 	//默认超时时间
-	expiry := inst.Config.Expiry
-	if len(expiries) > 0 {
-		expiry = expiries[0]
+	expire := inst.Config.Expire
+	if len(expires) > 0 {
+		expire = expires[0]
 	}
 
 	// 编码数据
@@ -106,33 +106,33 @@ func (this *Module) WriteTo(conn string, key string, val Map, expiries ...time.D
 
 	//KEY加上前缀
 	realkey := inst.Config.Prefix + key
-	return inst.connect.Write(realkey, data, expiry)
+	return inst.connect.Write(realkey, data, expire)
 }
 
 // Write 写缓存
-func (this *Module) Write(key string, val Map, expiries ...time.Duration) error {
-	return this.WriteTo("", key, val, expiries...)
+func (this *Module) Write(key string, val Map, expires ...time.Duration) error {
+	return this.WriteTo("", key, val, expires...)
 }
 
-func (this *Module) WriteDataTo(conn, key string, data []byte, expiries ...time.Duration) error {
+func (this *Module) WriteDataTo(conn, key string, data []byte, expires ...time.Duration) error {
 	inst, err := this.getInst(conn, key)
 	if err != nil {
 		return err
 	}
 
-	expiry := inst.Config.Expiry
-	if len(expiries) > 0 {
-		expiry = expiries[0]
+	expire := inst.Config.Expire
+	if len(expires) > 0 {
+		expire = expires[0]
 	}
 
 	//KEY加上前缀
 	realkey := inst.Config.Prefix + key
-	return inst.connect.Write(realkey, data, expiry)
+	return inst.connect.Write(realkey, data, expire)
 }
 
 // Write 写缓原始数据
-func (this *Module) WriteData(key string, data []byte, expiries ...time.Duration) error {
-	return this.WriteDataTo("", key, data, expiries...)
+func (this *Module) WriteData(key string, data []byte, expires ...time.Duration) error {
+	return this.WriteDataTo("", key, data, expires...)
 }
 
 // Delete 从指定库删除缓存
@@ -152,24 +152,24 @@ func (this *Module) Delete(key string) error {
 }
 
 // SequenceOn 指定库生成编号
-func (this *Module) SequenceOn(conn, key string, start, step int64, expiries ...time.Duration) (int64, error) {
+func (this *Module) SequenceOn(conn, key string, start, step int64, expires ...time.Duration) (int64, error) {
 	inst, err := this.getInst(conn, key)
 	if err != nil {
 		return -1, err
 	}
 
-	expiry := time.Duration(0) //默认不过期
-	if len(expiries) > 0 {
-		expiry = expiries[0]
+	expire := time.Duration(0) //默认不过期
+	if len(expires) > 0 {
+		expire = expires[0]
 	}
 
 	realKey := inst.Config.Prefix + key
-	return inst.connect.Sequence(realKey, start, step, expiry)
+	return inst.connect.Sequence(realKey, start, step, expire)
 }
 
 // Sequence 生成编号
-func (this *Module) Sequence(key string, start, step int64, expiries ...time.Duration) (int64, error) {
-	return this.SequenceOn("", key, start, step, expiries...)
+func (this *Module) Sequence(key string, start, step int64, expires ...time.Duration) (int64, error) {
+	return this.SequenceOn("", key, start, step, expires...)
 }
 
 // Keys 获取所有前缀的KEYS
