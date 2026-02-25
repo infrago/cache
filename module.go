@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -159,7 +160,9 @@ func (m *Module) Open() {
 	m.opened = true
 }
 
-func (m *Module) Start() {}
+func (m *Module) Start() {
+	fmt.Printf("bamgoo cache module is running with %d connections.\n", len(m.instances))
+}
 
 func (m *Module) Stop() {}
 
