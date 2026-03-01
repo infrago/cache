@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -48,7 +49,7 @@ func (m *Module) ReadFrom(conn, key string) (Map, error) {
 		return nil, err
 	}
 	val := Map{}
-	if err := bamgoo.Unmarshal(inst.Config.Codec, data, &val); err != nil {
+	if err := cacheUnmarshal(inst.Config.Codec, data, &val); err != nil {
 		return nil, err
 	}
 	return val, nil
@@ -82,7 +83,7 @@ func (m *Module) WriteTo(conn string, key string, val Map, expires ...time.Durat
 		expire = expires[0]
 	}
 
-	data, err := bamgoo.Marshal(inst.Config.Codec, &val)
+	data, err := cacheMarshal(inst.Config.Codec, &val)
 	if err != nil {
 		return err
 	}
@@ -207,4 +208,34 @@ func (m *Module) ClearFrom(conn string, prefixs ...string) error {
 
 func (m *Module) Clear(prefixs ...string) error {
 	return m.ClearFrom("", prefixs...)
+}
+
+func cacheMarshal(codec string, value Any) ([]byte, error) {
+	name := strings.TrimSpace(codec)
+	if name == "" {
+		name = bamgoo.JSON
+	}
+	data, err := bamgoo.Marshal(name, value)
+	if err == nil {
+		return data, nil
+	}
+	if strings.EqualFold(name, bamgoo.JSON) && err.Error() == "Invalid codec." {
+		return json.Marshal(value)
+	}
+	return nil, err
+}
+
+func cacheUnmarshal(codec string, data []byte, value Any) error {
+	name := strings.TrimSpace(codec)
+	if name == "" {
+		name = bamgoo.JSON
+	}
+	err := bamgoo.Unmarshal(name, data, value)
+	if err == nil {
+		return nil
+	}
+	if strings.EqualFold(name, bamgoo.JSON) && err.Error() == "Invalid codec." {
+		return json.Unmarshal(data, value)
+	}
+	return err
 }
