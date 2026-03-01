@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	. "github.com/bamgoo/base"
+	. "github.com/infrago/base"
 )
 
 func Read(key string) (Map, error) {

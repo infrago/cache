@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/bamgoo/base"
-	"github.com/bamgoo/bamgoo"
+	. "github.com/infrago/base"
+	"github.com/infrago/infra"
 )
 
 func (m *Module) getInst(conn, key string) (*Instance, error) {
@@ -213,13 +213,13 @@ func (m *Module) Clear(prefixs ...string) error {
 func cacheMarshal(codec string, value Any) ([]byte, error) {
 	name := strings.TrimSpace(codec)
 	if name == "" {
-		name = bamgoo.JSON
+		name = infra.JSON
 	}
-	data, err := bamgoo.Marshal(name, value)
+	data, err := infra.Marshal(name, value)
 	if err == nil {
 		return data, nil
 	}
-	if strings.EqualFold(name, bamgoo.JSON) && err.Error() == "Invalid codec." {
+	if strings.EqualFold(name, infra.JSON) && err.Error() == "Invalid codec." {
 		return json.Marshal(value)
 	}
 	return nil, err
@@ -228,13 +228,13 @@ func cacheMarshal(codec string, value Any) ([]byte, error) {
 func cacheUnmarshal(codec string, data []byte, value Any) error {
 	name := strings.TrimSpace(codec)
 	if name == "" {
-		name = bamgoo.JSON
+		name = infra.JSON
 	}
-	err := bamgoo.Unmarshal(name, data, value)
+	err := infra.Unmarshal(name, data, value)
 	if err == nil {
 		return nil
 	}
-	if strings.EqualFold(name, bamgoo.JSON) && err.Error() == "Invalid codec." {
+	if strings.EqualFold(name, infra.JSON) && err.Error() == "Invalid codec." {
 		return json.Unmarshal(data, value)
 	}
 	return err

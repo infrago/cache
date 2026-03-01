@@ -1,2 +1,2 @@
 # cache
-bamgoo cache module.
+infrago cache module.

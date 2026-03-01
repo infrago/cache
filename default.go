@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bamgoo/bamgoo"
+	"github.com/infrago/infra"
 	"github.com/coocood/freecache"
 )
 
@@ -18,7 +18,7 @@ type defaultConnection struct {
 }
 
 func init() {
-	module.RegisterDriver(bamgoo.DEFAULT, &defaultDriver{})
+	module.RegisterDriver(infra.DEFAULT, &defaultDriver{})
 }
 
 func (d *defaultDriver) Connect(inst *Instance) (Connect, error) {

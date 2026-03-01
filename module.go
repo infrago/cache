@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bamgoo/bamgoo"
-	. "github.com/bamgoo/base"
-	"github.com/bamgoo/util"
+	"github.com/infrago/infra"
+	. "github.com/infrago/base"
+	"github.com/infrago/util"
 )
 
 func init() {
-	bamgoo.Mount(module)
+	infra.Mount(module)
 }
 
 var (
@@ -70,12 +70,12 @@ func (m *Module) RegisterDriver(name string, driver Driver) {
 	defer m.mutex.Unlock()
 
 	if name == "" {
-		name = bamgoo.DEFAULT
+		name = infra.DEFAULT
 	}
 	if driver == nil {
 		panic("Invalid cache driver: " + name)
 	}
-	if bamgoo.Override() {
+	if infra.Override() {
 		m.drivers[name] = driver
 	} else {
 		if _, ok := m.drivers[name]; !ok {
@@ -89,9 +89,9 @@ func (m *Module) RegisterConfig(name string, config Config) {
 	defer m.mutex.Unlock()
 
 	if name == "" {
-		name = bamgoo.DEFAULT
+		name = infra.DEFAULT
 	}
-	if bamgoo.Override() {
+	if infra.Override() {
 		m.configs[name] = config
 	} else {
 		if _, ok := m.configs[name]; !ok {
@@ -118,18 +118,18 @@ func (m *Module) Open() {
 	}
 
 	if len(m.configs) == 0 {
-		m.configs[bamgoo.DEFAULT] = Config{Driver: bamgoo.DEFAULT, Weight: 1}
+		m.configs[infra.DEFAULT] = Config{Driver: infra.DEFAULT, Weight: 1}
 	}
 
 	for name, cfg := range m.configs {
 		if name == "" {
-			name = bamgoo.DEFAULT
+			name = infra.DEFAULT
 		}
 		if cfg.Driver == "" {
-			cfg.Driver = bamgoo.DEFAULT
+			cfg.Driver = infra.DEFAULT
 		}
 		if cfg.Codec == "" {
-			cfg.Codec = bamgoo.JSON
+			cfg.Codec = infra.JSON
 		}
 		if cfg.Weight == 0 {
 			cfg.Weight = 1
@@ -161,7 +161,7 @@ func (m *Module) Open() {
 }
 
 func (m *Module) Start() {
-	fmt.Printf("bamgoo cache module is running with %d connections.\n", len(m.instances))
+	fmt.Printf("infrago cache module is running with %d connections.\n", len(m.instances))
 }
 
 func (m *Module) Stop() {}

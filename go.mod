@@ -1,4 +1,4 @@
-module github.com/bamgoo/cache
+module github.com/infrago/cache
 
 go 1.25.3
 

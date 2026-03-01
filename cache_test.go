@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/bamgoo/base"
+	. "github.com/infrago/base"
 )
 
 func TestDefaultCacheBasic(t *testing.T) {
