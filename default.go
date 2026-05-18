@@ -1,13 +1,14 @@
 package cache
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/infrago/infra"
 	"github.com/coocood/freecache"
+	"github.com/infrago/infra"
 )
 
 type defaultDriver struct{}
@@ -37,7 +38,11 @@ func (c *defaultConnection) Open() error  { return nil }
 func (c *defaultConnection) Close() error { return nil }
 
 func (c *defaultConnection) Read(key string) ([]byte, error) {
-	return c.cache.Get([]byte(key))
+	data, err := c.cache.Get([]byte(key))
+	if errors.Is(err, freecache.ErrNotFound) {
+		return nil, nil
+	}
+	return data, err
 }
 
 func (c *defaultConnection) Write(key string, val []byte, expire time.Duration) error {
@@ -50,10 +55,10 @@ func (c *defaultConnection) Write(key string, val []byte, expire time.Duration) 
 
 func (c *defaultConnection) Exists(key string) (bool, error) {
 	_, err := c.cache.Get([]byte(key))
-	if err != nil {
+	if errors.Is(err, freecache.ErrNotFound) {
 		return false, nil
 	}
-	return true, nil
+	return err == nil, err
 }
 
 func (c *defaultConnection) Delete(key string) error {
@@ -62,29 +67,48 @@ func (c *defaultConnection) Delete(key string) error {
 }
 
 func (c *defaultConnection) Sequence(key string, start, step int64, expire time.Duration) (int64, error) {
+	vals, err := c.SequenceMany(key, start, step, 1, expire)
+	if err != nil {
+		return -1, err
+	}
+	return vals[0], nil
+}
+
+func (c *defaultConnection) SequenceMany(key string, start, step, count int64, expire time.Duration) ([]int64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if count <= 0 {
+		return []int64{}, nil
+	}
 	sec := int(expire.Seconds())
 	if sec < 0 {
 		sec = 0
 	}
 
-	var current int64
+	current := start
+	found := false
 	if data, err := c.cache.Get([]byte(key)); err == nil {
 		if v, err := strconv.ParseInt(string(data), 10, 64); err == nil {
 			current = v
+			found = true
 		}
 	}
 
-	if current == 0 {
-		current = start
-	} else {
+	if found {
 		current += step
 	}
 
+	vals := make([]int64, 0, count)
+	for i := int64(0); i < count; i++ {
+		if i > 0 {
+			current += step
+		}
+		vals = append(vals, current)
+	}
+
 	_ = c.cache.Set([]byte(key), []byte(strconv.FormatInt(current, 10)), sec)
-	return current, nil
+	return vals, nil
 }
 
 func (c *defaultConnection) Keys(prefix string) ([]string, error) {

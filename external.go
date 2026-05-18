@@ -62,6 +62,14 @@ func SequenceOn(conn, key string, start, step int64, expires ...time.Duration) (
 	return module.SequenceOn(conn, key, start, step, expires...)
 }
 
+func SequenceMany(key string, start, step, count int64, expires ...time.Duration) ([]int64, error) {
+	return module.SequenceMany(key, start, step, count, expires...)
+}
+
+func SequenceManyOn(conn, key string, start, step, count int64, expires ...time.Duration) ([]int64, error) {
+	return module.SequenceManyOn(conn, key, start, step, count, expires...)
+}
+
 func Keys(prefixs ...string) ([]string, error) {
 	return module.Keys(prefixs...)
 }
@@ -76,4 +84,24 @@ func Clear(prefixs ...string) error {
 
 func ClearFrom(conn string, prefixs ...string) error {
 	return module.ClearFrom(conn, prefixs...)
+}
+
+func ClearAll() error {
+	return module.ClearAll()
+}
+
+func ClearAllFrom(conn string) error {
+	return module.ClearAllFrom(conn)
+}
+
+func Stats() Statistics {
+	return module.Stats()
+}
+
+func StatsFrom(conn string) (Statistics, error) {
+	return module.StatsFrom(conn)
+}
+
+func ResetStats() {
+	module.ResetStats()
 }

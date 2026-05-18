@@ -2,6 +2,7 @@ package cache
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -23,35 +24,73 @@ func (m *Module) getInst(conn, key string) (*Instance, error) {
 }
 
 func (m *Module) Exists(key string) (bool, error) {
+	m.stats.exists.Add(1)
 	inst, err := m.getInst("", key)
 	if err != nil {
+		m.addError(nil)
 		return false, err
 	}
-	return inst.connect.Exists(key)
+	inst.stats.exists.Add(1)
+	realKey := inst.Config.Prefix + key
+	ok, err := inst.connect.Exists(realKey)
+	if err != nil {
+		m.addError(inst)
+		return false, err
+	}
+	if ok {
+		m.addHit(inst)
+	} else {
+		m.addMiss(inst)
+	}
+	return ok, nil
 }
 
 func (m *Module) ExistsIn(conn, key string) (bool, error) {
+	m.stats.exists.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return false, err
 	}
-	return inst.connect.Exists(key)
+	inst.stats.exists.Add(1)
+	realKey := inst.Config.Prefix + key
+	ok, err := inst.connect.Exists(realKey)
+	if err != nil {
+		m.addError(inst)
+		return false, err
+	}
+	if ok {
+		m.addHit(inst)
+	} else {
+		m.addMiss(inst)
+	}
+	return ok, nil
 }
 
 func (m *Module) ReadFrom(conn, key string) (Map, error) {
+	m.stats.read.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return nil, err
 	}
+	inst.stats.read.Add(1)
 	realKey := inst.Config.Prefix + key
 	data, err := inst.connect.Read(realKey)
 	if err != nil {
+		m.addError(inst)
 		return nil, err
+	}
+	if data == nil {
+		m.addMiss(inst)
+		return nil, nil
 	}
 	val := Map{}
 	if err := cacheUnmarshal(inst.Config.Codec, data, &val); err != nil {
+		m.addError(inst)
 		return nil, err
 	}
+	m.addHit(inst)
 	return val, nil
 }
 
@@ -60,12 +99,25 @@ func (m *Module) Read(key string) (Map, error) {
 }
 
 func (m *Module) ReadDataFrom(conn, key string) ([]byte, error) {
+	m.stats.read.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return nil, err
 	}
+	inst.stats.read.Add(1)
 	realKey := inst.Config.Prefix + key
-	return inst.connect.Read(realKey)
+	data, err := inst.connect.Read(realKey)
+	if err != nil {
+		m.addError(inst)
+		return nil, err
+	}
+	if data == nil {
+		m.addMiss(inst)
+	} else {
+		m.addHit(inst)
+	}
+	return data, nil
 }
 
 func (m *Module) ReadData(key string) ([]byte, error) {
@@ -73,10 +125,13 @@ func (m *Module) ReadData(key string) ([]byte, error) {
 }
 
 func (m *Module) WriteTo(conn string, key string, val Map, expires ...time.Duration) error {
+	m.stats.write.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return err
 	}
+	inst.stats.write.Add(1)
 
 	expire := inst.Config.Expire
 	if len(expires) > 0 {
@@ -85,11 +140,16 @@ func (m *Module) WriteTo(conn string, key string, val Map, expires ...time.Durat
 
 	data, err := cacheMarshal(inst.Config.Codec, &val)
 	if err != nil {
+		m.addError(inst)
 		return err
 	}
 
 	realKey := inst.Config.Prefix + key
-	return inst.connect.Write(realKey, data, expire)
+	if err := inst.connect.Write(realKey, data, expire); err != nil {
+		m.addError(inst)
+		return err
+	}
+	return nil
 }
 
 func (m *Module) Write(key string, val Map, expires ...time.Duration) error {
@@ -97,10 +157,13 @@ func (m *Module) Write(key string, val Map, expires ...time.Duration) error {
 }
 
 func (m *Module) WriteDataTo(conn, key string, data []byte, expires ...time.Duration) error {
+	m.stats.write.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return err
 	}
+	inst.stats.write.Add(1)
 
 	expire := inst.Config.Expire
 	if len(expires) > 0 {
@@ -108,7 +171,11 @@ func (m *Module) WriteDataTo(conn, key string, data []byte, expires ...time.Dura
 	}
 
 	realKey := inst.Config.Prefix + key
-	return inst.connect.Write(realKey, data, expire)
+	if err := inst.connect.Write(realKey, data, expire); err != nil {
+		m.addError(inst)
+		return err
+	}
+	return nil
 }
 
 func (m *Module) WriteData(key string, data []byte, expires ...time.Duration) error {
@@ -116,12 +183,19 @@ func (m *Module) WriteData(key string, data []byte, expires ...time.Duration) er
 }
 
 func (m *Module) DeleteFrom(conn, key string) error {
+	m.stats.delete.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return err
 	}
+	inst.stats.delete.Add(1)
 	realKey := inst.Config.Prefix + key
-	return inst.connect.Delete(realKey)
+	if err := inst.connect.Delete(realKey); err != nil {
+		m.addError(inst)
+		return err
+	}
+	return nil
 }
 
 func (m *Module) Delete(key string) error {
@@ -129,23 +203,73 @@ func (m *Module) Delete(key string) error {
 }
 
 func (m *Module) SequenceOn(conn, key string, start, step int64, expires ...time.Duration) (int64, error) {
+	m.stats.sequence.Add(1)
 	inst, err := m.getInst(conn, key)
 	if err != nil {
+		m.addError(nil)
 		return -1, err
 	}
+	inst.stats.sequence.Add(1)
 	expire := time.Duration(0)
 	if len(expires) > 0 {
 		expire = expires[0]
 	}
 	realKey := inst.Config.Prefix + key
-	return inst.connect.Sequence(realKey, start, step, expire)
+	val, err := inst.connect.Sequence(realKey, start, step, expire)
+	if err != nil {
+		m.addError(inst)
+		return -1, err
+	}
+	return val, nil
 }
 
 func (m *Module) Sequence(key string, start, step int64, expires ...time.Duration) (int64, error) {
 	return m.SequenceOn("", key, start, step, expires...)
 }
 
+func (m *Module) SequenceManyOn(conn, key string, start, step, count int64, expires ...time.Duration) ([]int64, error) {
+	m.stats.sequenceMany.Add(1)
+	if count <= 0 {
+		return []int64{}, nil
+	}
+	inst, err := m.getInst(conn, key)
+	if err != nil {
+		m.addError(nil)
+		return nil, err
+	}
+	inst.stats.sequenceMany.Add(1)
+	expire := time.Duration(0)
+	if len(expires) > 0 {
+		expire = expires[0]
+	}
+	realKey := inst.Config.Prefix + key
+	if conn, ok := inst.connect.(ManyConnect); ok {
+		vals, err := conn.SequenceMany(realKey, start, step, count, expire)
+		if err != nil {
+			m.addError(inst)
+			return nil, err
+		}
+		return vals, nil
+	}
+
+	vals := make([]int64, 0, count)
+	for i := int64(0); i < count; i++ {
+		val, err := inst.connect.Sequence(realKey, start, step, expire)
+		if err != nil {
+			m.addError(inst)
+			return vals, err
+		}
+		vals = append(vals, val)
+	}
+	return vals, nil
+}
+
+func (m *Module) SequenceMany(key string, start, step, count int64, expires ...time.Duration) ([]int64, error) {
+	return m.SequenceManyOn("", key, start, step, count, expires...)
+}
+
 func (m *Module) KeysFrom(conn string, prefixs ...string) ([]string, error) {
+	m.stats.keys.Add(1)
 	prefix := ""
 	if len(prefixs) > 0 {
 		prefix = prefixs[0]
@@ -155,21 +279,13 @@ func (m *Module) KeysFrom(conn string, prefixs ...string) ([]string, error) {
 
 	if conn == "" {
 		for _, inst := range m.instances {
+			inst.stats.keys.Add(1)
 			realPrefix := inst.Config.Prefix + prefix
 			temps, err := inst.connect.Keys(realPrefix)
-			if err == nil {
-				for _, temp := range temps {
-					keys = append(keys, strings.TrimPrefix(temp, realPrefix))
-				}
+			if err != nil {
+				m.addError(inst)
+				return keys, err
 			}
-		}
-		return keys, nil
-	}
-
-	if inst, ok := m.instances[conn]; ok {
-		realPrefix := inst.Config.Prefix + prefix
-		temps, err := inst.connect.Keys(realPrefix)
-		if err == nil {
 			for _, temp := range temps {
 				keys = append(keys, strings.TrimPrefix(temp, realPrefix))
 			}
@@ -177,6 +293,21 @@ func (m *Module) KeysFrom(conn string, prefixs ...string) ([]string, error) {
 		return keys, nil
 	}
 
+	if inst, ok := m.instances[conn]; ok {
+		inst.stats.keys.Add(1)
+		realPrefix := inst.Config.Prefix + prefix
+		temps, err := inst.connect.Keys(realPrefix)
+		if err != nil {
+			m.addError(inst)
+			return keys, err
+		}
+		for _, temp := range temps {
+			keys = append(keys, strings.TrimPrefix(temp, realPrefix))
+		}
+		return keys, nil
+	}
+
+	m.addError(nil)
 	return keys, ErrInvalidConnection
 }
 
@@ -185,6 +316,19 @@ func (m *Module) Keys(prefixs ...string) ([]string, error) {
 }
 
 func (m *Module) ClearFrom(conn string, prefixs ...string) error {
+	return m.clearFrom(conn, false, prefixs...)
+}
+
+func (m *Module) ClearAllFrom(conn string) error {
+	return m.clearFrom(conn, true)
+}
+
+func (m *Module) ClearAll() error {
+	return m.clearFrom("", true)
+}
+
+func (m *Module) clearFrom(conn string, allowAll bool, prefixs ...string) error {
+	m.stats.clear.Add(1)
 	prefix := ""
 	if len(prefixs) > 0 {
 		prefix = prefixs[0]
@@ -192,22 +336,63 @@ func (m *Module) ClearFrom(conn string, prefixs ...string) error {
 
 	if conn == "" {
 		for _, inst := range m.instances {
+			if prefix == "" && !allowAll && !inst.Config.AllowClearAll {
+				m.addError(inst)
+				return ErrUnsafeClear
+			}
+		}
+		for _, inst := range m.instances {
+			inst.stats.clear.Add(1)
 			realPrefix := inst.Config.Prefix + prefix
-			_ = inst.connect.Clear(realPrefix)
+			if err := inst.connect.Clear(realPrefix); err != nil {
+				m.addError(inst)
+				return err
+			}
 		}
 		return nil
 	}
 
 	if inst, ok := m.instances[conn]; ok {
+		if prefix == "" && !allowAll && !inst.Config.AllowClearAll {
+			m.addError(inst)
+			return ErrUnsafeClear
+		}
+		inst.stats.clear.Add(1)
 		realPrefix := inst.Config.Prefix + prefix
-		return inst.connect.Clear(realPrefix)
+		if err := inst.connect.Clear(realPrefix); err != nil {
+			m.addError(inst)
+			return err
+		}
+		return nil
 	}
 
+	m.addError(nil)
 	return ErrInvalidConnection
 }
 
 func (m *Module) Clear(prefixs ...string) error {
 	return m.ClearFrom("", prefixs...)
+}
+
+func (m *Module) addHit(inst *Instance) {
+	m.stats.hit.Add(1)
+	if inst != nil {
+		inst.stats.hit.Add(1)
+	}
+}
+
+func (m *Module) addMiss(inst *Instance) {
+	m.stats.miss.Add(1)
+	if inst != nil {
+		inst.stats.miss.Add(1)
+	}
+}
+
+func (m *Module) addError(inst *Instance) {
+	m.stats.error.Add(1)
+	if inst != nil {
+		inst.stats.error.Add(1)
+	}
 }
 
 func cacheMarshal(codec string, value Any) ([]byte, error) {
@@ -219,7 +404,7 @@ func cacheMarshal(codec string, value Any) ([]byte, error) {
 	if err == nil {
 		return data, nil
 	}
-	if strings.EqualFold(name, infra.JSON) && err.Error() == "Invalid codec." {
+	if strings.EqualFold(name, infra.JSON) && errors.Is(err, infra.ErrInvalidCodec) {
 		return json.Marshal(value)
 	}
 	return nil, err
@@ -234,7 +419,7 @@ func cacheUnmarshal(codec string, data []byte, value Any) error {
 	if err == nil {
 		return nil
 	}
-	if strings.EqualFold(name, infra.JSON) && err.Error() == "Invalid codec." {
+	if strings.EqualFold(name, infra.JSON) && errors.Is(err, infra.ErrInvalidCodec) {
 		return json.Unmarshal(data, value)
 	}
 	return err

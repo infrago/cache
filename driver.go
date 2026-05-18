@@ -19,4 +19,8 @@ type (
 		Keys(prefix string) ([]string, error)
 		Clear(prefix string) error
 	}
+
+	ManyConnect interface {
+		SequenceMany(key string, start, step, count int64, expire time.Duration) ([]int64, error)
+	}
 )
