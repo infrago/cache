@@ -4,9 +4,9 @@ go 1.25.3
 
 require (
 	github.com/coocood/freecache v1.2.4
-	github.com/infrago/base v0.27.0
-	github.com/infrago/infra v0.27.0
-	github.com/infrago/util v0.27.0
+	github.com/infrago/base v0.28.0
+	github.com/infrago/infra v0.28.0
+	github.com/infrago/util v0.28.0
 )
 
 require (
